@@ -4,30 +4,23 @@ from urllib.parse import urljoin, urlparse
 import time
 
 def find_duplicate_titles_improved(start_url):
-    """
-    Улучшенная версия: сканирует сайт, находя дубликаты заголовков,
-    с улучшенной нормализацией URL и пропуском ссылок на файлы.
-    """
     titles = {}
-    # Для очереди используем оригинальные URL, чтобы переходить по ссылкам как есть
     urls_to_visit = [start_url]
     # Для посещенных используем нормализованные URL, чтобы не ходить по кругу
     visited_normalized_urls = set()
     start_time = time.time()
     max_urls = 200
 
-    # Расширения файлов, которые нужно игнорировать
+    # Расширения файлов, которые нужно игнорировать, чтобы отсматривать только то, где в целом может существовать Title
     excluded_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.docx', '.xlsx', '.zip', '.rar', '.mp3', '.mp4']
 
-    print("--- Начало сканирования (улучшенная версия) ---")
+    print("--- Начало сканирования ---")
     print(f"Стартовый URL: {start_url}")
 
     def normalize_url(url):
-        # Приводим URL к единому виду: без протокола, www и слэша в конце
+        # Приводим URL к единому виду: без протокола, www и слэша в конце, чтобы скрипт не ходил по кругу
         p_url = urlparse(url)
-        # Убираем 'www.' из домена
         netloc = p_url.netloc.replace('www.', '')
-        # Собираем и убираем слэш
         return (netloc + p_url.path).rstrip('/')
 
     # Сразу добавляем стартовый URL в посещенные
@@ -45,7 +38,7 @@ def find_duplicate_titles_improved(start_url):
         print(f"URL в очереди: {len(urls_to_visit)}")
 
         try:
-            # Используем stream=True и headers, чтобы сначала проверить тип контента
+            # сначала надо проверить тип контента
             head_response = requests.head(url, timeout=5, allow_redirects=True)
             content_type = head_response.headers.get('content-type', '')
             if 'text/html' not in content_type:
@@ -73,7 +66,7 @@ def find_duplicate_titles_improved(start_url):
         links = link_regex.findall(html_content)
         new_links_found = 0
         for link in links:
-            # Пропускаем "mailto", "tel" и якорные ссылки
+            # Пропускаем "mailto", "tel" и якорные ссылки, чтобы пройтись только по карте сайта
             if link.startswith(('mailto:', 'tel:', '#')):
                 continue
 
@@ -104,8 +97,7 @@ def find_duplicate_titles_improved(start_url):
     return duplicate_titles
 
 if __name__ == '__main__':
-    # Запускаем улучшенную проверку
-    duplicate_titles = find_duplicate_titles_improved('http://uzi-samara.ru/')
+    duplicate_titles = find_duplicate_titles_improved('http://example.com/')
 
     if duplicate_titles:
         print("\n--- Найдены дубликаты мета-тегов Title: ---")
